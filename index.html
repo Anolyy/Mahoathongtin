@@ -16,6 +16,9 @@
     <textarea id="data" placeholder="Nhập dữ liệu cần mã hóa"></textarea>
     <button onclick="encryptData()">Mã hóa & Lưu</button>
     <button onclick="decryptData()">Giải mã</button>
+    <h2>Xóa dữ liệu mã hóa</h2>
+    <input type="text" id="hashToDelete" placeholder="Nhập hash của dữ liệu cần xóa">
+    <button onclick="deleteData()">Xóa dữ liệu mã hóa</button>
     <h3>Kết quả:</h3>
     <p id="result"></p>
 
@@ -31,35 +34,68 @@
             }
 
             let encrypted = CryptoJS.AES.encrypt(data, key).toString();
-            let timestamp = new Date().toISOString();
+            let timestamp = new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" });
 
             let storedData = JSON.parse(localStorage.getItem("secureData")) || {};
-            storedData[key] = { encrypted: encrypted, timestamp: timestamp };
+            let hash = CryptoJS.SHA256(encrypted + timestamp).toString();
+
+            if (Object.keys(storedData).length === 0) {
+                storedData["genesis"] = { hash: hash, encrypted: encrypted, timestamp: timestamp };
+            } else {
+                storedData[hash] = { encrypted: encrypted, timestamp: timestamp };
+            }
 
             localStorage.setItem("secureData", JSON.stringify(storedData));
 
-            document.getElementById("result").innerText = "Dữ liệu đã được mã hóa & lưu!";
+            document.getElementById("result").innerText = "Dữ liệu đã được mã hóa, hash & lưu!\nHash: " + hash;
         }
 
         function decryptData() {
             let key = document.getElementById("key").value;
             let storedData = JSON.parse(localStorage.getItem("secureData")) || {};
 
-            if (!key || !storedData[key]) {
+            if (!key || Object.keys(storedData).length === 0) {
                 alert("Không có dữ liệu hoặc khóa sai!");
                 return;
             }
 
-            let encryptedData = storedData[key].encrypted;
-            let decrypted = CryptoJS.AES.decrypt(encryptedData, key).toString(CryptoJS.enc.Utf8);
-
-            if (!decrypted) {
-                alert("Sai khóa! Không thể giải mã.");
-            } else {
-                let resultText = "Dữ liệu gốc: " + decrypted;
-                resultText += "\nThời gian mã hóa: " + storedData[key].timestamp;
-                document.getElementById("result").innerText = resultText;
+            let resultText = "";
+            let genesis = storedData["genesis"];
+            if (genesis) {
+                let decryptedGenesis = CryptoJS.AES.decrypt(genesis.encrypted, key).toString(CryptoJS.enc.Utf8);
+                if (decryptedGenesis) {
+                    resultText += "Genesis Dữ liệu gốc: " + decryptedGenesis + "\nThời gian mã hóa: " + genesis.timestamp + "\nHash: " + genesis.hash + "\n\n";
+                }
             }
+
+            Object.keys(storedData).forEach(function(hash) {
+                if (hash !== "genesis") {
+                    let entry = storedData[hash];
+                    let decrypted = CryptoJS.AES.decrypt(entry.encrypted, key).toString(CryptoJS.enc.Utf8);
+                    if (decrypted) {
+                        resultText += "Dữ liệu gốc: " + decrypted;
+                        resultText += "\nThời gian mã hóa: " + entry.timestamp;
+                        resultText += "\nHash: " + hash + "\n\n";
+                    }
+                }
+            });
+
+            document.getElementById("result").innerText = resultText;
+        }
+
+        function deleteData() {
+            let hashToDelete = document.getElementById("hashToDelete").value;
+            let storedData = JSON.parse(localStorage.getItem("secureData")) || {};
+
+            if (!hashToDelete || !storedData[hashToDelete]) {
+                alert("Không có dữ liệu với hash này hoặc hash sai!");
+                return;
+            }
+
+            delete storedData[hashToDelete];
+            localStorage.setItem("secureData", JSON.stringify(storedData));
+
+            document.getElementById("result").innerText = "Dữ liệu với hash " + hashToDelete + " đã được xóa!";
         }
     </script>
 </body>
