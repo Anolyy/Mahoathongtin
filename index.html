@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mã hóa dữ liệu bảo mật</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        input, textarea { width: 80%; padding: 10px; margin: 10px; }
+        button { padding: 10px 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Mã hóa & Lưu trữ dữ liệu</h2>
+    <input type="password" id="key" placeholder="Nhập khóa bảo mật">
+    <textarea id="data" placeholder="Nhập dữ liệu cần mã hóa"></textarea>
+    <button onclick="encryptData()">Mã hóa & Lưu</button>
+    <button onclick="decryptData()">Giải mã</button>
+    <h3>Kết quả:</h3>
+    <p id="result"></p>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script>
+        function encryptData() {
+            let key = document.getElementById("key").value;
+            let data = document.getElementById("data").value;
+
+            if (!key || !data) {
+                alert("Vui lòng nhập khóa và dữ liệu!");
+                return;
+            }
+
+            let encrypted = CryptoJS.AES.encrypt(data, key).toString();
+            localStorage.setItem("secureData", encrypted);
+
+            document.getElementById("result").innerText = "Dữ liệu đã được mã hóa & lưu!";
+        }
+
+        function decryptData() {
+            let key = document.getElementById("key").value;
+            let encryptedData = localStorage.getItem("secureData");
+
+            if (!key || !encryptedData) {
+                alert("Không có dữ liệu hoặc khóa sai!");
+                return;
+            }
+
+            let decrypted = CryptoJS.AES.decrypt(encryptedData, key).toString(CryptoJS.enc.Utf8);
+
+            if (!decrypted) {
+                alert("Sai khóa! Không thể giải mã.");
+            } else {
+                document.getElementById("result").innerText = "Dữ liệu gốc: " + decrypted;
+            }
+        }
+    </script>
+</body>
+</html>
