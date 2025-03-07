@@ -31,26 +31,34 @@
             }
 
             let encrypted = CryptoJS.AES.encrypt(data, key).toString();
-            localStorage.setItem("secureData", encrypted);
+            let timestamp = new Date().toISOString();
+
+            let storedData = JSON.parse(localStorage.getItem("secureData")) || {};
+            storedData[key] = { encrypted: encrypted, timestamp: timestamp };
+
+            localStorage.setItem("secureData", JSON.stringify(storedData));
 
             document.getElementById("result").innerText = "Dữ liệu đã được mã hóa & lưu!";
         }
 
         function decryptData() {
             let key = document.getElementById("key").value;
-            let encryptedData = localStorage.getItem("secureData");
+            let storedData = JSON.parse(localStorage.getItem("secureData")) || {};
 
-            if (!key || !encryptedData) {
+            if (!key || !storedData[key]) {
                 alert("Không có dữ liệu hoặc khóa sai!");
                 return;
             }
 
+            let encryptedData = storedData[key].encrypted;
             let decrypted = CryptoJS.AES.decrypt(encryptedData, key).toString(CryptoJS.enc.Utf8);
 
             if (!decrypted) {
                 alert("Sai khóa! Không thể giải mã.");
             } else {
-                document.getElementById("result").innerText = "Dữ liệu gốc: " + decrypted;
+                let resultText = "Dữ liệu gốc: " + decrypted;
+                resultText += "\nThời gian mã hóa: " + storedData[key].timestamp;
+                document.getElementById("result").innerText = resultText;
             }
         }
     </script>
